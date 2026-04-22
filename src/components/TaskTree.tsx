@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type Dispatch } from "react";
 import type { ReducerAction } from "../reducer";
 import { flatten, isDescendant, isHabit, isHabitInherited } from "../tree";
 import type { AppState, Editing, Stack, TaskId } from "../types";
-import { Kbd, Menu, MenuItem } from "../design";
+import { Kbd, Menu } from "../design";
 import { EditingInput } from "./EditingInput";
 import "./TaskTree.css";
 
@@ -265,19 +265,16 @@ export function TaskTree({ state, stack, dispatch }: Props) {
             <Menu
               x={contextMenu.x}
               y={contextMenu.y}
+              items={[
+                { id: "toggle-habit", label, disabled: inherited },
+              ]}
+              onSelect={(id) => {
+                if (id === "toggle-habit") {
+                  dispatch({ type: "toggle-habit", taskId: contextMenu.taskId });
+                }
+              }}
               onClose={() => setContextMenu(null)}
-            >
-              <MenuItem
-                onSelect={() => {
-                  if (!inherited) {
-                    dispatch({ type: "toggle-habit", taskId: contextMenu.taskId });
-                  }
-                  setContextMenu(null);
-                }}
-              >
-                {label}
-              </MenuItem>
-            </Menu>
+            />
           );
         })()}
     </section>

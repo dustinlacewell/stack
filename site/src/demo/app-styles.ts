@@ -15,6 +15,7 @@ import kbdCss from "@app/design/primitives/Kbd.css?raw";
 import menuCss from "@app/design/primitives/Menu.css?raw";
 import dialogCss from "@app/design/primitives/Dialog.css?raw";
 import chipCss from "@app/design/primitives/Chip.css?raw";
+import stackSelectCss from "@app/components/StackSelect.css?raw";
 
 // Remap :root → :host so custom properties scope to the shadow root
 const scopedTokens = tokens.replace(/:root/g, ":host");
@@ -28,12 +29,23 @@ const baseReset = `
   font-size: var(--text-base);
   color: var(--text);
   line-height: var(--leading-normal);
+  text-align: left;
 }
 
 *, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+select, input, button {
+  font: inherit;
+  color: inherit;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
 }
 
 .app-frame {
@@ -44,6 +56,11 @@ const baseReset = `
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-window);
+}
+
+/* Re-enable pointer events for menu portals inside the portal container */
+.portal-container .menu-scrim {
+  pointer-events: auto;
 }
 `;
 
@@ -62,4 +79,5 @@ export const appStyles = [
   menuCss,
   dialogCss,
   chipCss,
+  stackSelectCss,
 ].join("\n");

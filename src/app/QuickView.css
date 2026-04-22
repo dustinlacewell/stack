@@ -22,39 +22,6 @@
   flex: 1;
 }
 
-.stack-select {
-  background: var(--surface-3);
-  border: 1px solid var(--border-strong);
-  color: inherit;
-  border-radius: var(--radius-md);
-  padding: 0 var(--space-4);
-  font-family: inherit;
-  font-size: var(--text-md);
-  outline: none;
-  min-width: 130px;
-  max-width: 180px;
-  appearance: none;
-  background-image: linear-gradient(
-      45deg,
-      transparent 50%,
-      var(--text-arrow) 50%
-    ),
-    linear-gradient(-45deg, transparent 50%, var(--text-arrow) 50%);
-  background-position: right 10px center, right 6px center;
-  background-size: 4px 4px;
-  background-repeat: no-repeat;
-  padding-right: 22px;
-  cursor: pointer;
-}
-
-.stack-select:focus {
-  border-color: var(--accent-border-xh);
-}
-
-.stack-select:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 
 .quick .hint {
   font-size: var(--text-sm);

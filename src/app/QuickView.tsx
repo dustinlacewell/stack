@@ -2,6 +2,7 @@ import type { Dispatch } from "react";
 import type { ReducerAction } from "../reducer";
 import type { Stack, StackId } from "../types";
 import { EditingInput } from "../components/EditingInput";
+import { StackSelect } from "../components/StackSelect";
 import { Kbd } from "../design";
 import "./QuickView.css";
 
@@ -25,29 +26,14 @@ export function QuickView({
   return (
     <div className="quick">
       <div className="quick-row">
-        <select
-          className="stack-select"
-          value={activeStackId ?? ""}
-          onChange={(e) =>
-            dispatch({
-              type: "set-active-stack",
-              stackId: e.currentTarget.value,
-            })
-          }
+        <StackSelect
+          stacks={stacks}
+          activeStackId={activeStackId}
           disabled={stacks.length === 0}
-          tabIndex={-1}
-          title="Target stack (Ctrl+↑/↓ cycles)"
-        >
-          {stacks.length === 0 ? (
-            <option value="">Todo (new)</option>
-          ) : (
-            stacks.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name || "Untitled"}
-              </option>
-            ))
-          )}
-        </select>
+          onChange={(stackId) =>
+            dispatch({ type: "set-active-stack", stackId })
+          }
+        />
         <EditingInput
           value={draft}
           placeholder="Quick thought…"

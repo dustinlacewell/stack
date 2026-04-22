@@ -1,17 +1,71 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
+import { PortalContext } from "../../portal/context";
+import type { PortalItem } from "../../portal/types";
 import "./Menu.css";
+
+/**
+ * Portal container for menus in the browser. Defaults to `document.body`.
+ * Provide a different element (e.g. a shadow root container) to keep
+ * menus inside an encapsulated DOM subtree.
+ */
+export const MenuPortalContext = createContext<HTMLElement | null>(null);
+
+export type MenuItemDef = PortalItem;
 
 type MenuProps = {
   x: number;
   y: number;
+  items: MenuItemDef[];
+  onSelect: (id: string) => void;
   onClose: () => void;
-  children: ReactNode;
 };
 
-// Anchored context menu. Positions at (x, y), clamped to viewport.
-// Closes on outside click, Escape, or any menu-item activation.
-export function Menu({ x, y, onClose, children }: MenuProps) {
+/**
+ * Anchored context menu. Data-driven: takes an items array.
+ *
+ * In Tauri: delegates to the portal window (separate WebviewWindow) so
+ * the menu can paint outside the main window's bounds.
+ *
+ * In the browser / site: renders via createPortal into the nearest
+ * MenuPortalContext container (or document.body).
+ */
+export function Menu({ x, y, items, onSelect, onClose }: MenuProps) {
+  const portal = useContext(PortalContext);
+
+  // --- Tauri path: delegate to the portal window ---
+  useEffect(() => {
+    if (!portal) return;
+    let cancelled = false;
+    portal.showMenu({ items, x, y }).then((id) => {
+      if (cancelled) return;
+      if (id) onSelect(id);
+      onClose();
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Run once on mount — the menu is conditionally rendered, so mount
+    // IS the trigger. Don't re-fire on prop changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (portal) return null;
+
+  // --- Browser path: render locally ---
+  return <BrowserMenu x={x} y={y} items={items} onSelect={onSelect} onClose={onClose} />;
+}
+
+/** Browser/site fallback — createPortal into the DOM. */
+function BrowserMenu({ x, y, items, onSelect, onClose }: MenuProps) {
+  const portalContainer = useContext(MenuPortalContext) ?? document.body;
   const ref = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState({ x, y });
 
@@ -55,32 +109,28 @@ export function Menu({ x, y, onClose, children }: MenuProps) {
         onMouseDown={(e) => e.stopPropagation()}
         role="menu"
       >
-        {children}
+        {items.map((item, i) => {
+          if ("separator" in item && item.separator) {
+            return <div key={`sep-${i}`} className="menu-separator" role="separator" />;
+          }
+          const it = item as Extract<MenuItemDef, { id: string }>;
+          return (
+            <button
+              key={it.id}
+              type="button"
+              role="menuitem"
+              className={`menu-item${it.danger ? " danger" : ""}`}
+              onClick={() => {
+                onSelect(it.id);
+                onClose();
+              }}
+            >
+              {it.label}
+            </button>
+          );
+        })}
       </div>
     </div>,
-    document.body
+    portalContainer,
   );
-}
-
-type ItemProps = {
-  onSelect: () => void;
-  danger?: boolean;
-  children: ReactNode;
-};
-
-export function MenuItem({ onSelect, danger, children }: ItemProps) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      className={`menu-item ${danger ? "danger" : ""}`}
-      onClick={onSelect}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function MenuSeparator() {
-  return <div className="menu-separator" role="separator" />;
 }

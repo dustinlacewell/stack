@@ -36,6 +36,8 @@ import { QuickView } from "./app/QuickView";
 import { StackView } from "./app/StackView";
 import { countAllTasks, findFirstOpen } from "./tree";
 import type { AppState, View, WindowSize } from "./types";
+import { PortalContext, type PortalAPI } from "./portal/context";
+import { initPortalBridge, isPortalActive } from "./portal/bridge";
 import "./App.css";
 
 // Mirrors the Rust `ShortcutOutcome` struct in src-tauri/src/lib.rs.
@@ -124,6 +126,8 @@ export default function App() {
     RegistrationOutcome[]
   >([]);
 
+  const [portalAPI, setPortalAPI] = useState<PortalAPI | null>(null);
+
   // Refs keep handlers stable without forcing re-registration on every state
   // change — effects that reconcile to the OS still see the latest snapshot.
   const stateRef = useRef(state);
@@ -182,6 +186,17 @@ export default function App() {
     if (!hydrated) return;
     saveBindings(overrides);
   }, [overrides, hydrated]);
+
+  // --- Portal window for floating UI (menus, dropdowns) ---
+  useEffect(() => {
+    let cancelled = false;
+    initPortalBridge().then((api) => {
+      if (!cancelled) setPortalAPI(api);
+    }).catch((err) => {
+      logError(`portal init failed: ${err}`);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // --- Action dispatcher ----------------------------------------------------
   // fire() is thin: it dispatches reducer actions. Native side-effects (show,
@@ -547,9 +562,15 @@ export default function App() {
         if (s.pinned) return;
         if (s.view.kind === "settings") return;
         if (s.confirming) return;
+        // Don't hide while a portal menu/dropdown is open — the portal
+        // window steals focus, which fires this blur, but the user is
+        // still interacting with the app.
+        if (isPortalActive()) return;
         if (hideTimer !== null) clearTimeout(hideTimer);
         hideTimer = window.setTimeout(() => {
           hideTimer = null;
+          // Re-check: portal may have opened during the grace window.
+          if (isPortalActive()) return;
           dispatch({ type: "window.hide" });
         }, 180);
       });
@@ -630,7 +651,8 @@ export default function App() {
   );
 
   return (
-    <div className={`app view-${state.view.kind}`}>
+    <PortalContext.Provider value={portalAPI}>
+      <div className={`app view-${state.view.kind}`}>
       <Titlebar
         view={state.view}
         titleText={titleText}
@@ -671,7 +693,7 @@ export default function App() {
       {confirmingStack && (
         <ConfirmDialog
           title="Delete stack?"
-          body={`“${confirmingStack.name || "Untitled"}” and its ${countAllTasks(
+          body={`"${confirmingStack.name || "Untitled"}" and its ${countAllTasks(
             confirmingStack.tasks
           )} task${countAllTasks(confirmingStack.tasks) === 1 ? "" : "s"} will be permanently removed.`}
           destructive
@@ -680,7 +702,8 @@ export default function App() {
           onCancel={() => dispatch({ type: "confirm-cancel" })}
         />
       )}
-    </div>
+      </div>
+    </PortalContext.Provider>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useState, type Dispatch } from "react";
 import type { ReducerAction } from "../reducer";
 import type { AppState, Editing, StackId } from "../types";
-import { Chip, IconButton, Menu, MenuItem, MenuSeparator } from "../design";
+import { Chip, IconButton, Menu } from "../design";
 import { countOpenTasks } from "../tree";
 import { EditingInput } from "./EditingInput";
 import "./StackList.css";
@@ -154,26 +154,22 @@ export function StackList({ state, dispatch }: Props) {
       </ul>
 
       {menu && (
-        <Menu x={menu.x} y={menu.y} onClose={closeMenu}>
-          <MenuItem
-            onSelect={() => {
+        <Menu
+          x={menu.x}
+          y={menu.y}
+          items={[
+            { id: "rename", label: "Rename" },
+            { separator: true },
+            { id: "delete", label: "Delete", danger: true },
+          ]}
+          onSelect={(id) => {
+            if (id === "rename")
               dispatch({ type: "rename-stack-start", stackId: menu.stackId });
-              closeMenu();
-            }}
-          >
-            Rename
-          </MenuItem>
-          <MenuSeparator />
-          <MenuItem
-            danger
-            onSelect={() => {
+            if (id === "delete")
               dispatch({ type: "request-delete-stack", stackId: menu.stackId });
-              closeMenu();
-            }}
-          >
-            Delete
-          </MenuItem>
-        </Menu>
+          }}
+          onClose={closeMenu}
+        />
       )}
     </aside>
   );
