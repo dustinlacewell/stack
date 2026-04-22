@@ -1,14 +1,12 @@
-import { useReducer } from "react";
-import { reducer } from "@app/reducer";
 import { StackView } from "@app/app/StackView";
 import { Titlebar } from "@app/app/Titlebar";
 import { ConfirmDialog } from "@app/components/ConfirmDialog";
 import { ShadowScope } from "./ShadowScope";
-import { fixtureState } from "./fixture";
 import { appStyles } from "./app-styles";
+import { useDemoState, dispatch } from "./store";
 
 export function StackViewDemo() {
-  const [state, dispatch] = useReducer(reducer, undefined, fixtureState);
+  const state = useDemoState();
   const activeStack =
     state.stacks.find((s) => s.id === state.activeStackId) ?? null;
 
@@ -16,7 +14,7 @@ export function StackViewDemo() {
     <ShadowScope styles={appStyles} className="demo-stack-view">
       <div className="app-frame" style={{ height: "100%" }}>
         <Titlebar
-          view={state.view}
+          view={{ kind: "stack" }}
           titleText="Stack"
           pinned={state.pinned}
           onOpenSettings={() => {}}
@@ -36,8 +34,8 @@ export function StackViewDemo() {
             body="This will permanently delete the stack and all its tasks."
             destructive
             confirmLabel="Delete"
-            onConfirm={() => dispatch({ type: "confirm-delete-stack" })}
-            onCancel={() => dispatch({ type: "cancel-confirm" })}
+            onConfirm={() => dispatch({ type: "confirm-commit" })}
+            onCancel={() => dispatch({ type: "confirm-cancel" })}
           />
         )}
       </div>

@@ -1,30 +1,25 @@
-import { useReducer, useCallback } from "react";
-import { reducer } from "@app/reducer";
+import { useCallback } from "react";
 import { QuickView } from "@app/app/QuickView";
 import { ShadowScope } from "./ShadowScope";
-import { fixtureState } from "./fixture";
 import { appStyles } from "./app-styles";
+import { useDemoState, dispatch } from "./store";
 
 export function QuickViewDemo() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => {
-    const s = fixtureState();
-    // Start with the quick view open and a draft in progress
-    return { ...s, view: { kind: "quick" as const, draft: "" } };
-  });
+  const state = useDemoState();
 
   const stacks = state.stacks;
   const draft = state.view.kind === "quick" ? state.view.draft : "";
 
   const onCommit = useCallback(() => {
     if (state.view.kind === "quick" && state.view.draft.trim()) {
-      dispatch({ type: "view.quick-commit" });
-      // Re-open quick view for continued demo
-      dispatch({ type: "show-quick" });
+      // Create task in the active stack via the real reducer…
+      dispatch({ type: "quick-add.commit" });
+      // …then re-open quick view so the demo stays usable.
+      dispatch({ type: "view.open-quick" });
     }
   }, [state.view]);
 
   const onCancel = useCallback(() => {
-    // In the demo, just clear the draft instead of hiding
     dispatch({ type: "view.quick-update-draft", draft: "" });
   }, []);
 
