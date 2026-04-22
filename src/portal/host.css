@@ -9,7 +9,6 @@ html, body, #root {
   margin: 0;
   padding: 0;
   background: transparent;
-  overflow: hidden;
 }
 
 .portal-menu {
@@ -21,6 +20,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  width: max-content;
 }
 
 .portal-item {

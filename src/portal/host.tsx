@@ -4,7 +4,7 @@
  * main window via Tauri events, self-sizes, and sends back selections.
  */
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { listen, emit } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -28,20 +28,36 @@ function PortalHost() {
   }, []);
 
   // After rendering, measure content, resize + position + show the window.
-  useLayoutEffect(() => {
+  //
+  // The portal window starts at 1×1 (hidden). Content can't lay out in a
+  // 1×1 viewport, so we first expand the window offscreen to a generous
+  // size, wait for layout, measure the actual content, then shrink-to-fit
+  // and position at the requested screen coordinates.
+  useEffect(() => {
     if (!request || !menuRef.current) return;
     const el = menuRef.current;
-    const rect = el.getBoundingClientRect();
     const win = getCurrentWindow();
-    const PAD = 4; // viewport-edge padding
+    const PAD = 4;
 
+    let cancelled = false;
     (async () => {
       const scale = await win.scaleFactor();
-      const w = Math.ceil(rect.width) + 2; // +2 for subpixel safety
+
+      // 1. Move offscreen and expand so content can lay out freely.
+      await win.setPosition(new LogicalPosition(-2000, -2000));
+      await win.setSize(new LogicalSize(600, 600));
+
+      // 2. Wait for the browser to lay out inside the now-generous viewport.
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      if (cancelled) return;
+
+      // 3. Measure the actual content size.
+      const rect = el.getBoundingClientRect();
+      const w = Math.ceil(rect.width) + 2; // +2 for subpixel rounding
       const h = Math.ceil(rect.height) + 2;
 
-      // Compute position. The request coords are in physical screen pixels;
-      // LogicalPosition wants logical, so divide by scale.
+      // 4. Compute final position. Request coords are physical screen
+      //    pixels; LogicalPosition wants logical, so divide by scale.
       let x = request.screenX / scale;
       let y = request.screenY / scale;
 
@@ -53,11 +69,14 @@ function PortalHost() {
       if (x < PAD) x = PAD;
       if (y < PAD) y = PAD;
 
+      // 5. Shrink-to-fit, move into place, reveal.
       await win.setSize(new LogicalSize(w, h));
       await win.setPosition(new LogicalPosition(x, y));
       await win.show();
       await win.setFocus();
     })();
+
+    return () => { cancelled = true; };
   }, [request]);
 
   // Blur → dismiss.
