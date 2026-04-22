@@ -1,5 +1,6 @@
 ---
-
+import { readFileSync } from "fs";
+const pkg = JSON.parse(readFileSync("../package.json", "utf-8"));
 ---
 
 <footer class="border-t border-white/[0.06] py-8">
@@ -8,7 +9,7 @@
       <span
         class="inline-block h-2 w-2 rounded-full bg-mint-300/60"
       ></span>
-      Stack
+      Stack v{pkg.version}
     </div>
     <div class="flex gap-6 text-sm text-gray-500">
       <a

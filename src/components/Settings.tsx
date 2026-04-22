@@ -81,7 +81,7 @@ function AboutTab() {
     <div className="about">
       <h2>Stack</h2>
       <p className="about-line">A one-key reach for “what am I doing.”</p>
-      <p className="about-line dim">v0.1.0 · Tauri + React</p>
+      <p className="about-line dim">v{__APP_VERSION__} · Tauri + React</p>
     </div>
   );
 }

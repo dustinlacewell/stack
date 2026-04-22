@@ -8,7 +8,7 @@ const features = [
   {
     icon: "🌳",
     title: "Nested tasks",
-    body: "Organize with depth. Indent tasks into subtrees, drag to re-parent, collapse complexity.",
+    body: "Organize with depth. Indent tasks into subtrees, collapse complexity when you need to focus.",
   },
   {
     icon: "🕐",
@@ -26,9 +26,9 @@ const features = [
     body: "Built on Tauri — native Rust backend, tiny footprint. No Electron, no bloat.",
   },
   {
-    icon: "🎨",
-    title: "Stays out of sight",
-    body: "Frameless, transparent, auto-hides on blur. It appears when called and vanishes when done.",
+    icon: "🔀",
+    title: "Drag and drop",
+    body: "Reorder stacks, move tasks between levels, re-parent with a drag. Everything goes where you put it.",
   },
 ];
 ---
@@ -41,8 +41,8 @@ const features = [
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {features.map(({ icon, title, body }) => (
         <div class="feature-card rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-mint-300/20 hover:bg-white/[0.04]">
-          <div class="mb-3 text-2xl">{icon}</div>
-          <h3 class="mb-2 text-sm font-semibold uppercase tracking-wider text-mint-300">
+          <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-mint-300">
+            <span class="text-lg">{icon}</span>
             {title}
           </h3>
           <p class="text-sm leading-relaxed text-gray-400">{body}</p>

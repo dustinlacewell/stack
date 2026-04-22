@@ -1,5 +1,6 @@
 ---
 import { StackViewDemo } from "../demo/StackViewDemo";
+import DownloadButtons from "./DownloadButtons.astro";
 ---
 
 <section class="relative overflow-hidden pt-20 pb-8 sm:pt-28 sm:pb-12">
@@ -12,25 +13,20 @@ import { StackViewDemo } from "../demo/StackViewDemo";
 
   <div class="mx-auto max-w-5xl px-6 text-center">
     <!-- Logo dot + name -->
-    <div class="mb-6 flex items-center justify-center gap-3">
+    <h1 class="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
       <span
-        class="inline-block h-3 w-3 rounded-full bg-mint-300"
+        class="mr-3 inline-block h-3 w-3 align-middle translate-y-[-0.15em] rounded-full bg-mint-300"
         style="box-shadow: 0 0 12px rgba(123,220,181,0.6)"
-      ></span>
-      <h1
-        class="text-5xl font-bold tracking-tight text-white sm:text-6xl"
-      >
-        Stack
-      </h1>
-    </div>
+      ></span>Stack
+    </h1>
 
     <p class="mx-auto mb-3 text-xl text-mint-300/80 font-medium italic">
       Throw it on the pile.
     </p>
 
     <p class="mx-auto mb-12 max-w-lg text-base text-gray-400 leading-relaxed sm:text-lg">
-      A fast, keyboard-driven task manager that stays out of your way.
-      Nested tasks, daily habits, global shortcuts&mdash;all in a lightweight desktop app.
+      A popup task manager that appears with a hotkey and vanishes when you're done.
+      Nested tasks, daily habits, drag-and-drop&mdash;always one keystroke away.
     </p>
 
     <!-- Live demo -->
@@ -42,6 +38,9 @@ import { StackViewDemo } from "../demo/StackViewDemo";
         This is the real app — go ahead, click around.
       </p>
     </div>
+
+    <!-- Download buttons below the demo -->
+    <DownloadButtons class="mt-8" />
   </div>
 </section>
 
