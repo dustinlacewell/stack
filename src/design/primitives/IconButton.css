@@ -1,0 +1,29 @@
+.icon-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  border-radius: var(--radius-md);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-4);
+}
+
+.icon-btn.toggled {
+  background: var(--accent-soft-hi);
+  border-color: var(--accent-border);
+}
+
+.icon-btn.large {
+  font-size: 16px;
+  line-height: 1;
+}

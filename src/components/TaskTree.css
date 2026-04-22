@@ -1,0 +1,154 @@
+.task-tree {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.task-tree.empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.task-tree.empty .empty-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--text-md);
+}
+
+.task-tree.empty .empty-hint .h {
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.tasks {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.task-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.task-row:hover {
+  background: var(--surface-1);
+}
+
+.task-row.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent-border-mid);
+}
+
+.task-row.done .text {
+  text-decoration: line-through;
+  color: var(--text-strike);
+}
+
+.task-row .check {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--outline-subtle);
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.task-row .check.checked {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill-hi);
+  color: var(--accent-on-solid);
+}
+
+.task-row .text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-row .text em {
+  color: var(--text-ghost);
+  font-style: italic;
+}
+
+.task-row .bullet {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-muted);
+  font-weight: 700;
+}
+
+.task-row.editing {
+  background: var(--surface-2);
+}
+
+.depth-0 { padding-left: var(--space-4); }
+.depth-1 { padding-left: 22px; }
+.depth-2 { padding-left: 36px; }
+.depth-3 { padding-left: 50px; }
+.depth-4 { padding-left: 64px; }
+.depth-5 { padding-left: 78px; }
+.depth-6 { padding-left: 92px; }
+.depth-7 { padding-left: 106px; }
+.depth-8 { padding-left: 120px; }
+
+.task-row.dragging {
+  opacity: 0.4;
+}
+
+/* Drop indicator: a 2px bar whose horizontal inset matches the *depth the
+   task will land at*. So "before"/"after" indent to the target row's own
+   depth, and "into" indents one level further (becomes target's child).
+   That makes the three zones visually distinguishable even when they
+   vertically abut. Depth is supplied per-row via the --drop-indent
+   variable; the CSS itself is depth-agnostic. */
+.task-row.drop-before::before,
+.task-row.drop-after::after,
+.task-row.drop-into::after {
+  content: "";
+  position: absolute;
+  right: var(--space-2);
+  height: 2px;
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  left: var(--drop-indent, var(--space-2));
+}
+
+.task-row.drop-before::before { top: -2px; }
+.task-row.drop-after::after { bottom: -2px; }
+.task-row.drop-into::after { bottom: -2px; }
+
+.empty-tasks {
+  padding: var(--space-7) var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--text-md);
+  text-align: center;
+  font-style: italic;
+}

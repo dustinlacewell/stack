@@ -1,0 +1,41 @@
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: var(--space-9);
+}
+
+.dialog {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow-dialog);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.dialog-title {
+  font-weight: 600;
+  font-size: var(--text-lg);
+}
+
+.dialog-body {
+  color: var(--text-dim);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}

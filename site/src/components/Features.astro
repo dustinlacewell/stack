@@ -1,0 +1,53 @@
+---
+const features = [
+  {
+    icon: "⌨️",
+    title: "Keyboard-first",
+    body: "Every action has a shortcut. Navigate, create, toggle, indent — without touching the mouse.",
+  },
+  {
+    icon: "🌳",
+    title: "Nested tasks",
+    body: "Organize with depth. Indent tasks into subtrees, drag to re-parent, collapse complexity.",
+  },
+  {
+    icon: "🕐",
+    title: "Daily habits",
+    body: "Mark any subtree as a habit. Completion resets automatically at midnight, every day.",
+  },
+  {
+    icon: "⚡",
+    title: "Global shortcuts",
+    body: "Summon the full view or quick capture from any app. OS-level hotkeys, always listening.",
+  },
+  {
+    icon: "🪶",
+    title: "Featherweight",
+    body: "Built on Tauri — native Rust backend, tiny footprint. No Electron, no bloat.",
+  },
+  {
+    icon: "🎨",
+    title: "Stays out of sight",
+    body: "Frameless, transparent, auto-hides on blur. It appears when called and vanishes when done.",
+  },
+];
+---
+
+<section class="py-20 sm:py-28">
+  <div class="mx-auto max-w-5xl px-6">
+    <h2 class="mb-12 text-center text-3xl font-bold tracking-tight text-white">
+      Everything you need, nothing you don't
+    </h2>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map(({ icon, title, body }) => (
+        <div class="feature-card rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-mint-300/20 hover:bg-white/[0.04]">
+          <div class="mb-3 text-2xl">{icon}</div>
+          <h3 class="mb-2 text-sm font-semibold uppercase tracking-wider text-mint-300">
+            {title}
+          </h3>
+          <p class="text-sm leading-relaxed text-gray-400">{body}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

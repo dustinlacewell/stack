@@ -1,0 +1,120 @@
+/* Design tokens — single source of truth for color, spacing, radius,
+   shadow, and typography. Every rule in the app consumes these; no
+   literal hex/rgba/px should appear outside this file (exceptions:
+   purely structural 0/1px borders). */
+
+:root {
+  /* ---- Color scheme: mint accent on near-black glass -------------------- */
+  --bg:                rgba(22, 22, 28, 0.94);
+  --bg-elevated:       rgba(28, 28, 34, 0.98);
+  --bg-scrim:          rgba(0, 0, 0, 0.55);
+
+  --surface-1:         rgba(255, 255, 255, 0.02);
+  --surface-2:         rgba(255, 255, 255, 0.04);
+  --surface-3:         rgba(255, 255, 255, 0.06);
+  --surface-4:         rgba(255, 255, 255, 0.08);
+  --surface-5:         rgba(255, 255, 255, 0.10);
+
+  --border:            rgba(255, 255, 255, 0.06);
+  --border-strong:     rgba(255, 255, 255, 0.12);
+  --border-faint:      rgba(255, 255, 255, 0.05);
+
+  --text:              #e8eaed;
+  --text-dim:          rgba(232, 234, 237, 0.75);
+  --text-muted:        rgba(232, 234, 237, 0.55);
+  --text-faint:        rgba(232, 234, 237, 0.4);
+  --text-ghost:        rgba(232, 234, 237, 0.3);
+  --text-hint:         rgba(232, 234, 237, 0.42);
+  --text-strike:       rgba(232, 234, 237, 0.45);
+  --text-arrow:        rgba(232, 234, 237, 0.6);
+
+  /* Low-contrast outlines (e.g. task checkbox) */
+  --outline-subtle:    rgba(255, 255, 255, 0.22);
+
+  /* Semantic accent — mint. */
+  --accent:            #7bdcb5;
+  --accent-glow:       rgba(123, 220, 181, 0.7);
+  --accent-soft:       rgba(123, 220, 181, 0.12);
+  --accent-soft-hi:    rgba(123, 220, 181, 0.2);
+  --accent-soft-2:     rgba(123, 220, 181, 0.14);
+  --accent-soft-3:     rgba(123, 220, 181, 0.3);
+  --accent-border:     rgba(123, 220, 181, 0.3);
+  --accent-border-lo:  rgba(123, 220, 181, 0.28);
+  --accent-border-mid: rgba(123, 220, 181, 0.35);
+  --accent-border-hi:  rgba(123, 220, 181, 0.45);
+  --accent-border-xh:  rgba(123, 220, 181, 0.5);
+  --accent-border-xxh: rgba(123, 220, 181, 0.85);
+  --accent-fill:       rgba(123, 220, 181, 0.6);
+  --accent-fill-hi:    rgba(123, 220, 181, 0.8);
+  --accent-muted:      rgba(123, 220, 181, 0.7);
+  --accent-text:       #d7f4e6;
+  --accent-on-solid:   #0f1512;
+
+  /* Semantic roles */
+  --danger:            #ff5a5a;
+  --danger-soft:       rgba(255, 90, 90, 0.18);
+  --danger-soft-lo:    rgba(255, 90, 90, 0.12);
+  --danger-soft-hi:    rgba(255, 90, 90, 0.28);
+  --danger-border:     rgba(255, 90, 90, 0.4);
+  --danger-border-hi:  rgba(255, 90, 90, 0.55);
+  --danger-line:       rgba(255, 90, 90, 0.6);
+  --danger-text:       #ffb3b3;
+  --danger-text-hi:    #ff9a9a;
+
+  --warn:              #ff8c5a;
+  --warn-soft:         rgba(255, 140, 90, 0.12);
+  --warn-soft-lo:      rgba(255, 140, 90, 0.06);
+  --warn-soft-hi:      rgba(255, 140, 90, 0.18);
+  --warn-border-lo:    rgba(255, 140, 90, 0.2);
+  --warn-border:       rgba(255, 140, 90, 0.35);
+  --warn-border-hi:    rgba(255, 140, 90, 0.5);
+  --warn-border-xh:    rgba(255, 140, 90, 0.6);
+  --warn-text:         #ffc89a;
+  --warn-text-hi:      #ffb89a;
+
+  /* Fallback (secondary warn) — distinct hue kept out of warn to avoid mixing */
+  --fallback-text:     #ffc89a;
+  --fallback-bg:       rgba(255, 200, 154, 0.1);
+  --fallback-border:   rgba(255, 200, 154, 0.3);
+
+  --recording-text:    #ffd88a;
+
+  /* ---- Geometry -------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-pill: 999px;
+
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-9: 20px;
+
+  /* ---- Typography ------------------------------------------------------ */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+               Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs:  10px;
+  --text-sm:  11px;
+  --text-md:  12px;
+  --text-base:13px;
+  --text-lg:  14px;
+  --text-xl:  18px;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.45;
+
+  /* ---- Shadows --------------------------------------------------------- */
+  --shadow-window: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --shadow-dialog: 0 14px 36px rgba(0, 0, 0, 0.5);
+  --shadow-menu:   0 10px 24px rgba(0, 0, 0, 0.4);
+  --glow-accent:   0 0 8px var(--accent-glow);
+  --ring-accent:   0 0 0 2px rgba(123, 220, 181, 0.15);
+}

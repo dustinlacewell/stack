@@ -1,0 +1,72 @@
+.quick {
+  /* All insets must exceed .app's 14px border-radius — anything closer
+     to the edge gets chewed by the corner curve (.app has overflow:hidden).
+     Bottom gets a little extra because the hint is the most visible
+     text at the window's edge. */
+  padding: var(--space-7) var(--space-9) var(--space-9);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  flex: 1;
+}
+
+.quick-row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.quick .editing-input {
+  font-size: var(--text-lg);
+  padding: 7px 11px;
+  flex: 1;
+}
+
+.stack-select {
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  color: inherit;
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-4);
+  font-family: inherit;
+  font-size: var(--text-md);
+  outline: none;
+  min-width: 130px;
+  max-width: 180px;
+  appearance: none;
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      var(--text-arrow) 50%
+    ),
+    linear-gradient(-45deg, transparent 50%, var(--text-arrow) 50%);
+  background-position: right 10px center, right 6px center;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+  padding-right: 22px;
+  cursor: pointer;
+}
+
+.stack-select:focus {
+  border-color: var(--accent-border-xh);
+}
+
+.stack-select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.quick .hint {
+  font-size: var(--text-sm);
+  color: var(--text-hint);
+  text-align: center;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick .hint .kbd {
+  font-size: var(--text-xs);
+  padding: 1px 5px;
+}

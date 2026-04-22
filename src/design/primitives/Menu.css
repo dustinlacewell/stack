@@ -1,0 +1,48 @@
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+}
+
+.menu {
+  position: absolute;
+  min-width: 160px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-menu);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.menu-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  text-align: left;
+  padding: 5px var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-md);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--surface-4);
+}
+
+.menu-item.danger {
+  color: var(--danger-text);
+}
+
+.menu-item.danger:hover {
+  background: var(--danger-soft);
+}
+
+.menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-1) 0;
+}
