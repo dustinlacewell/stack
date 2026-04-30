@@ -117,4 +117,46 @@
   --shadow-menu:   0 10px 24px rgba(0, 0, 0, 0.4);
   --glow-accent:   0 0 8px var(--accent-glow);
   --ring-accent:   0 0 0 2px rgba(123, 220, 181, 0.15);
+
+  /* ---- Scrollbar -------------------------------------------------------- */
+  --scrollbar-size:    6px;
+  --scrollbar-track:   transparent;
+  --scrollbar-thumb:   rgba(255, 255, 255, 0.10);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.18);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.24);
+}
+
+/* ---- Scrollbar styling -------------------------------------------------- */
+
+/* Standards track (Firefox, future Chromium) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit / Blink */
+::-webkit-scrollbar {
+  width:  var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
