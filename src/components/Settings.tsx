@@ -91,8 +91,6 @@ const SCOPE_ORDER: Scope[] = [
   "global",
   "list",
   "edit",
-  "quick",
-  "settings",
   "modal",
 ];
 
@@ -101,8 +99,6 @@ const SCOPE_LABEL: Record<Scope, string> = {
   global: "Window (always-active)",
   list: "Stack & task navigation",
   edit: "While editing a task / stack name",
-  quick: "Quick-add",
-  settings: "Settings screen",
   modal: "Confirmation dialogs",
 };
 

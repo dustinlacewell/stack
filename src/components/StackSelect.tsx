@@ -9,7 +9,7 @@ import {
 import { createPortal } from "react-dom";
 import type { Stack, StackId } from "../types";
 import { MenuPortalContext } from "../design";
-import { PortalContext } from "../portal/context";
+import { PortalContext } from "../windows/portal/context";
 import "./StackSelect.css";
 
 type Props = {

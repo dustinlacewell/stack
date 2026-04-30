@@ -1,19 +1,21 @@
 import { combosEqual, type KeyCombo } from "./keys";
+import type { ReducerAction } from "./reducer";
 
 export type Scope =
   | "global-os"
   | "global"
   | "list"
   | "edit"
-  | "quick"
-  | "settings"
   | "modal";
 
 export type ActionId =
-  // OS-level (registered with tauri-plugin-global-shortcut)
+  // OS-level (registered with tauri-plugin-global-shortcut). These can fire
+  // when the app doesn't have focus, so the Rust process is what receives
+  // the chord and emits a "shortcut:fired" event.
   | "app.toggle-window"
   | "app.quick-add"
-  // window-scoped fallbacks
+  | "app.search"
+  // window-scoped fallbacks (fire from any focused window of ours)
   | "app.hide"
   | "app.pin-toggle"
   | "app.open-settings"
@@ -35,23 +37,26 @@ export type ActionId =
   | "stack.new"
   | "stack.rename-active"
   | "stack.delete-active"
-  // editing (input focused)
+  // editing (input focused) — handled inside EditingInput; listed for the
+  // settings UI to advertise/rebind, never dispatched from the global handler
   | "edit.commit"
   | "edit.cancel"
-  // quick-add mode
-  | "quick.commit"
-  | "quick.cancel"
-  // settings screen
-  | "settings.exit"
   // modal / confirm
   | "modal.confirm"
   | "modal.cancel";
+
+// What this action does when triggered. Either a static reducer action
+// (most cases) or a function that returns one (or `null` to do nothing —
+// useful for actions whose handling lives elsewhere). Keeping the shape
+// uniform lets the dispatcher be a one-liner.
+export type ActionDispatch = ReducerAction | (() => ReducerAction | null);
 
 export type ActionDef = {
   id: ActionId;
   description: string;
   scope: Scope | Scope[];
   defaultBindings: KeyCombo[];
+  dispatch: ActionDispatch;
 };
 
 export function actionInScope(a: ActionDef, scope: Scope): boolean {
@@ -62,61 +67,84 @@ export function primaryScope(a: ActionDef): Scope {
   return Array.isArray(a.scope) ? a.scope[0] : a.scope;
 }
 
+// Resolve an action's dispatch to a concrete reducer action. Returns null
+// when the action has no work to do in the current state (e.g. edit.*,
+// which is owned by EditingInput).
+export function resolveDispatch(a: ActionDef): ReducerAction | null {
+  return typeof a.dispatch === "function" ? a.dispatch() : a.dispatch;
+}
+
 export const ACTIONS: ActionDef[] = [
   {
     id: "app.toggle-window",
     description: "Show/hide the stack window",
     scope: "global-os",
     defaultBindings: [{ key: "s", ctrl: true, alt: true }],
+    dispatch: { type: "present.toggle", window: "main" },
   },
   {
     id: "app.quick-add",
     description: "Quick-add a task to the top of the active stack",
     scope: "global-os",
     defaultBindings: [{ key: "n", ctrl: true, alt: true }],
+    dispatch: { type: "present.toggle", window: "quick" },
+  },
+  {
+    id: "app.search",
+    description: "Search stacks and tasks",
+    scope: "global-os",
+    defaultBindings: [{ key: "f", ctrl: true, alt: true }],
+    dispatch: { type: "present.toggle", window: "search" },
   },
   {
     id: "app.hide",
     description: "Hide the window",
     scope: "global",
     defaultBindings: [{ key: "Escape" }],
+    dispatch: { type: "present.set", window: null },
   },
   {
     id: "app.pin-toggle",
     description: "Toggle pin (keeps window visible on blur)",
     scope: "global",
     defaultBindings: [],
+    dispatch: { type: "toggle-pin" },
   },
   {
     id: "app.open-settings",
     description: "Open settings",
     scope: "list",
     defaultBindings: [{ key: ",", ctrl: true }],
+    dispatch: { type: "present.toggle", window: "settings" },
   },
 
   {
     id: "nav.prev-stack",
     description: "Move to the previous stack",
-    scope: ["list", "quick"],
+    scope: "list",
     defaultBindings: [{ key: "ArrowUp", ctrl: true }],
+    dispatch: { type: "cycle-stack", dir: -1 },
   },
   {
     id: "nav.next-stack",
     description: "Move to the next stack",
-    scope: ["list", "quick"],
+    scope: "list",
     defaultBindings: [{ key: "ArrowDown", ctrl: true }],
+    dispatch: { type: "cycle-stack", dir: 1 },
   },
   {
     id: "nav.prev-task",
     description: "Select the previous task",
     scope: "list",
     defaultBindings: [{ key: "ArrowUp" }],
+    dispatch: { type: "nav-task", dir: -1 },
   },
   {
     id: "nav.next-task",
     description: "Select the next task",
     scope: "list",
     defaultBindings: [{ key: "ArrowDown" }],
+    dispatch: { type: "nav-task", dir: 1 },
   },
 
   {
@@ -124,6 +152,7 @@ export const ACTIONS: ActionDef[] = [
     description: "Toggle completion of the selected task (cascades to children)",
     scope: "list",
     defaultBindings: [{ key: "Enter" }],
+    dispatch: { type: "toggle-selected" },
   },
   {
     id: "task.toggle-habit",
@@ -131,36 +160,42 @@ export const ACTIONS: ActionDef[] = [
       "Toggle habit on the selected task — habits clear their children's done flags at midnight",
     scope: "list",
     defaultBindings: [{ key: "h" }],
+    dispatch: { type: "toggle-habit-selected" },
   },
   {
     id: "task.delete",
     description: "Delete the selected task (and its children)",
     scope: "list",
     defaultBindings: [{ key: "Delete" }, { key: "Backspace" }],
+    dispatch: { type: "delete-selected" },
   },
   {
     id: "task.indent",
     description: "Indent the selected task",
     scope: "list",
     defaultBindings: [{ key: "Tab" }],
+    dispatch: { type: "indent-selected" },
   },
   {
     id: "task.outdent",
     description: "Outdent the selected task",
     scope: "list",
     defaultBindings: [{ key: "Tab", shift: true }],
+    dispatch: { type: "outdent-selected" },
   },
   {
     id: "task.new-here",
     description: "Create a new task after the selected one",
     scope: "list",
     defaultBindings: [{ key: "Enter", ctrl: true }],
+    dispatch: { type: "new-task-here-start" },
   },
   {
     id: "task.new-on-top",
     description: "Create a new task at the top of the active stack",
     scope: "list",
     defaultBindings: [{ key: "n", ctrl: true }],
+    dispatch: { type: "new-task-on-top-start" },
   },
 
   {
@@ -168,51 +203,39 @@ export const ACTIONS: ActionDef[] = [
     description: "Create a new stack and start editing its name",
     scope: "list",
     defaultBindings: [{ key: "s", ctrl: true }],
+    dispatch: { type: "new-stack-start" },
   },
   {
     id: "stack.rename-active",
     description: "Rename the active stack",
     scope: "list",
     defaultBindings: [{ key: "F2" }],
+    dispatch: { type: "rename-active-stack-start" },
   },
   {
     id: "stack.delete-active",
     description: "Delete the active stack (asks to confirm)",
     scope: "list",
     defaultBindings: [{ key: "Delete", ctrl: true, shift: true }],
+    dispatch: { type: "request-delete-active-stack" },
   },
 
+  // edit.* fire from inside EditingInput, which calls stopPropagation. The
+  // global dispatcher never sees them, but they're listed so settings can
+  // present and rebind them. dispatch is a no-op.
   {
     id: "edit.commit",
     description: "Save the current edit",
     scope: "edit",
     defaultBindings: [{ key: "Enter" }],
+    dispatch: () => null,
   },
   {
     id: "edit.cancel",
     description: "Cancel the current edit",
     scope: "edit",
     defaultBindings: [{ key: "Escape" }],
-  },
-
-  {
-    id: "quick.commit",
-    description: "Save and hide",
-    scope: "quick",
-    defaultBindings: [{ key: "Enter" }],
-  },
-  {
-    id: "quick.cancel",
-    description: "Dismiss quick-add",
-    scope: "quick",
-    defaultBindings: [{ key: "Escape" }],
-  },
-
-  {
-    id: "settings.exit",
-    description: "Close settings",
-    scope: "settings",
-    defaultBindings: [{ key: "Escape" }],
+    dispatch: () => null,
   },
 
   {
@@ -220,12 +243,14 @@ export const ACTIONS: ActionDef[] = [
     description: "Confirm the modal action",
     scope: "modal",
     defaultBindings: [{ key: "Enter" }],
+    dispatch: { type: "confirm-commit" },
   },
   {
     id: "modal.cancel",
     description: "Dismiss the modal",
     scope: "modal",
     defaultBindings: [{ key: "Escape" }],
+    dispatch: { type: "confirm-cancel" },
   },
 ];
 

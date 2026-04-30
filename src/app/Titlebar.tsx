@@ -1,9 +1,7 @@
-import type { View } from "../types";
 import { IconButton } from "../design";
 import "./Titlebar.css";
 
 type Props = {
-  view: View;
   titleText: string;
   pinned: boolean;
   onOpenSettings: () => void;
@@ -12,7 +10,6 @@ type Props = {
 };
 
 export function Titlebar({
-  view,
   titleText,
   pinned,
   onOpenSettings,
@@ -28,23 +25,16 @@ export function Titlebar({
         </span>
       </div>
       <div className="controls">
-        {view.kind === "stack" && (
-          <IconButton
-            title="Settings (Ctrl+,)"
-            onClick={onOpenSettings}
-          >
-            ⚙
-          </IconButton>
-        )}
-        {view.kind !== "quick" && (
-          <IconButton
-            toggled={pinned}
-            title={pinned ? "Pinned" : "Pin window (won't auto-hide)"}
-            onClick={onTogglePin}
-          >
-            {pinned ? "📌" : "📍"}
-          </IconButton>
-        )}
+        <IconButton title="Settings (Ctrl+,)" onClick={onOpenSettings}>
+          ⚙
+        </IconButton>
+        <IconButton
+          toggled={pinned}
+          title={pinned ? "Pinned" : "Pin window (won't auto-hide)"}
+          onClick={onTogglePin}
+        >
+          {pinned ? "📌" : "📍"}
+        </IconButton>
         <IconButton large title="Hide" onClick={onHide}>
           ×
         </IconButton>

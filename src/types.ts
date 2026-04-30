@@ -39,44 +39,86 @@ export type Confirming =
 
 export type SettingsTab = "keybindings" | "about";
 
-export type View =
-  | { kind: "stack" }
-  | { kind: "quick"; draft: string }
-  | { kind: "settings"; tab: SettingsTab };
+// One label per OS window. The "main" window hosts the stack view; quick,
+// search, and settings each live in their own webview. At most one is
+// presented at a time — see AppState.presented.
+export type WindowLabel = "main" | "quick" | "search" | "settings";
 
 export type WindowSize = { w: number; h: number };
 
+// Portal menu — overlay UI on top of whatever window is presented. Lives
+// in its own webview but doesn't replace the current presentation; it
+// floats over and dismisses.
+//
+// `requestId` is a fresh nonce per open so a stale dismiss can't clobber
+// a freshly-opened menu.
+export type PortalState = {
+  requestId: string;
+  request: PortalShowRequest;
+};
+
+// Re-exposed here to avoid cyclic imports on the portal types module.
+// The portal layer is still the canonical owner of the field shapes.
+export type PortalShowRequest = {
+  items: import("./windows/portal/types").PortalItem[];
+  screenX: number;
+  screenY: number;
+  minWidth?: number;
+};
+
+// Output of the Rust shortcut registrar: which combos succeeded and which
+// failed. Kept in reducer state so the settings window can render a fresh
+// snapshot whenever it changes.
+export type RegistrationOutcome = {
+  action: import("./actions").ActionId;
+  accel: string;
+  succeeded: boolean;
+  fallback: boolean;
+  error: string | null;
+};
+
 export type AppState = {
-  // Data
+  // --- Data -----------------------------------------------------------------
   stacks: Stack[];
   activeStackId: StackId | null;
   selectedTaskId: TaskId | null;
 
-  // Remembered window geometry for the stack view only. null = use default.
-  // Quick-add is fixed; settings opens at a fixed default each time.
+  // Remembered geometry for the user-resizable main window. `null` = use
+  // the built-in default. Other windows are fixed-size, no persistence.
   stackViewSize: WindowSize | null;
-
-  // What's on screen right now — React renders from this.
-  view: View;
-  // When the user asks to switch views while the window is visible we
-  // don't change `view` synchronously; the reducer hides the window and
-  // parks the target here. The reconciler commits it after the hide
-  // actually lands (`commit-pending-open`) so React never paints the new
-  // view into the still-visible, wrong-sized window.
-  pendingOpen: View | null;
 
   // Last local date (YYYY-MM-DD) on which habit `done` flags were cleared.
   // The scheduler compares this against today on boot / focus / timer tick so
   // resets survive restarts, sleep/wake, and timezone changes.
   lastHabitResetDate: string | null;
 
-  // Transient UI overlays
+  pinned: boolean;
+
+  // --- Stack-window UI ------------------------------------------------------
+  // Editing and confirming are modal *over* the stack window; they're
+  // owned by the main reducer because they reference stack data.
   editing: Editing;
   confirming: Confirming;
 
-  // Native window, reconciled by effects
-  windowVisible: boolean;
-  pinned: boolean;
+  // Settings tab persists across close/reopen of the settings window.
+  settingsTab: SettingsTab;
+
+  // User keybinding overrides. Persisted to disk; drives OS-shortcut
+  // registration via an effect that watches this field.
+  overrides: import("./actions").BindingOverrides;
+
+  // Output of the most recent shortcut registration pass. Surfaced in
+  // settings so the user can see why a binding isn't working.
+  registrationOutcomes: RegistrationOutcome[];
+
+  // --- Window presentation --------------------------------------------------
+  // Which window is on screen, or `null` for "all hidden". A reconciler
+  // in App.tsx maps this to OS-level show/hide for each registered window.
+  presented: WindowLabel | null;
+
+  // Portal menu (overlay). Reconciled separately — it floats on top of
+  // whichever window is presented.
+  portal: PortalState | null;
 };
 
 export type FlatEntry = {

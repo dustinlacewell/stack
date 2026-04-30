@@ -18,6 +18,9 @@ export default defineConfig(async () => ({
       input: {
         main: resolve(__dirname, "index.html"),
         portal: resolve(__dirname, "portal.html"),
+        search: resolve(__dirname, "search.html"),
+        quick: resolve(__dirname, "quick.html"),
+        settings: resolve(__dirname, "settings.html"),
       },
     },
   },

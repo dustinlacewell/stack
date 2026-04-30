@@ -1,0 +1,80 @@
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--text-default);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.4;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+}
+
+.quick {
+  flex: 1;
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-9) var(--space-9);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  box-shadow: var(--shadow-window);
+}
+
+.quick-row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.quick-stack-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-default);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-stack-indicator.disabled {
+  color: var(--text-hint);
+}
+
+.quick-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-default);
+  font-family: inherit;
+  font-size: var(--text-lg);
+  padding: 7px 11px;
+  outline: none;
+}
+
+.quick-input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--ring-accent);
+}
+
+.quick-hint {
+  font-size: var(--text-sm);
+  color: var(--text-hint);
+  text-align: center;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

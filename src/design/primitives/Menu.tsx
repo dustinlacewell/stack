@@ -7,8 +7,8 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { PortalContext } from "../../portal/context";
-import type { PortalItem } from "../../portal/types";
+import { PortalContext } from "../../windows/portal/context";
+import type { PortalItem } from "../../windows/portal/types";
 import "./Menu.css";
 
 /**

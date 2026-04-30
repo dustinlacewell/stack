@@ -1,13 +1,16 @@
 import type {
   AppState,
+  PortalShowRequest,
+  RegistrationOutcome,
   SettingsTab,
   Stack,
   StackId,
   Task,
   TaskId,
-  View,
+  WindowLabel,
   WindowSize,
 } from "./types";
+import type { BindingOverrides } from "./actions";
 import {
   deleteTask,
   findTask,
@@ -31,18 +34,20 @@ export function initialState(): AppState {
     activeStackId: null,
     selectedTaskId: null,
     stackViewSize: null,
-    view: { kind: "stack" },
-    pendingOpen: null,
     lastHabitResetDate: null,
+    pinned: false,
     editing: null,
     confirming: null,
-    windowVisible: false,
-    pinned: false,
+    settingsTab: "keybindings",
+    overrides: {},
+    registrationOutcomes: [],
+    presented: null,
+    portal: null,
   };
 }
 
 export type ReducerAction =
-  // Hydration
+  // --- Hydration -----------------------------------------------------------
   | {
       type: "hydrate";
       stacks: Stack[];
@@ -52,37 +57,39 @@ export type ReducerAction =
       lastHabitResetDate: string | null;
     }
 
-  // Habits
+  // --- Habits --------------------------------------------------------------
   | { type: "toggle-habit-selected" }
   | { type: "toggle-habit"; taskId: TaskId }
   | { type: "habits.reset-if-stale"; today: string }
 
-  // Window sizing
+  // --- Window presentation -------------------------------------------------
+  // `present.toggle` toggles the named window. `present.set` is the direct
+  // setter (used by external dismiss events). `present.hide` is sugar for
+  // `set(null)`. The reconciler in App.tsx maps `state.presented` to
+  // OS-level show/hide for each registered window.
+  | { type: "present.toggle"; window: WindowLabel }
+  | { type: "present.set"; window: WindowLabel | null }
+
+  // --- Window-emitted intents ----------------------------------------------
+  // Quick window:
+  | { type: "quick.commit-task"; text: string; stackId?: StackId }
+  // Settings window:
+  | { type: "settings.set-overrides"; overrides: BindingOverrides }
+  | { type: "settings.set-tab"; tab: SettingsTab }
+  // Search window:
+  | { type: "search.go-to"; stackId: StackId; taskId?: TaskId }
+
+  // --- Hydration of persisted overrides + outputs from OS reconciler -------
+  | { type: "bindings.hydrate"; overrides: BindingOverrides }
+  | { type: "bindings.set-outcomes"; outcomes: RegistrationOutcome[] }
+
+  // --- Window sizing -------------------------------------------------------
   | { type: "stack-view-resized"; size: WindowSize }
 
-  // Window (reconciled by an effect — reducer never touches Tauri directly)
-  | { type: "window.show" }
-  | { type: "window.hide" }
-  | { type: "window.toggle" }
-  | { type: "commit-pending-open" }
-
-  // View
-  | { type: "view.open-stack" }
-  | { type: "view.open-quick" }
-  | { type: "view.toggle-quick" }
-  | { type: "view.open-settings"; tab?: SettingsTab }
-  | { type: "view.quick-update-draft"; draft: string }
-  | { type: "view.settings-set-tab"; tab: SettingsTab }
-
-  // Intents (compound)
-  | { type: "quick-add.commit" }
-  | { type: "quick-add.cancel" }
-  | { type: "settings.exit" }
-
-  // Pin
+  // --- Pin -----------------------------------------------------------------
   | { type: "toggle-pin" }
 
-  // Stacks
+  // --- Stacks --------------------------------------------------------------
   | { type: "set-active-stack"; stackId: StackId }
   | { type: "cycle-stack"; dir: -1 | 1 }
   | { type: "new-stack-start" }
@@ -96,19 +103,26 @@ export type ReducerAction =
   | { type: "confirm-commit" }
   | { type: "confirm-cancel" }
 
-  // Tasks — editing
+  // --- Tasks — editing -----------------------------------------------------
   | { type: "edit-task-start"; taskId: TaskId }
   | { type: "edit-task-commit" }
   | { type: "edit-task-cancel" }
   | { type: "edit-draft"; draft: string }
 
-  // Tasks — creation
+  // --- Tasks — creation ----------------------------------------------------
   | { type: "new-task-on-top-start" }
   | { type: "new-task-here-start" }
   | { type: "new-task-commit" }
   | { type: "new-task-cancel" }
 
-  // Tasks — ops
+  // --- Portal menu (overlay) -----------------------------------------------
+  // Open carries a bridge-minted requestId because the bridge installs its
+  // promise resolver under that id before dispatching. Close ignores stale
+  // ids.
+  | { type: "portal.open"; request: PortalShowRequest; requestId: string }
+  | { type: "portal.close"; requestId: string }
+
+  // --- Tasks — ops ---------------------------------------------------------
   | { type: "select-task"; taskId: TaskId | null }
   | { type: "nav-task"; dir: -1 | 1 }
   | { type: "toggle-selected" }
@@ -135,32 +149,25 @@ function firstTaskIdOf(st: Stack | null): string | null {
   return st.tasks[0].id;
 }
 
-// Hide is a single flip. View/editing/confirming stay put — nobody's
-// looking at them while the window is hidden, and touching them here
-// would commit a DOM change into the still-visible webview. If the user
-// re-opens, the open path explicitly sets the view it wants.
-function onHide(s: AppState): AppState {
-  return { ...s, windowVisible: false, pendingOpen: null };
+// Make a stack active and select a task within it. When a taskId is given
+// but no longer exists (snapshot drift), fall back to the stack's first
+// task. Used by the search-go-to path.
+function selectStackAndTask(
+  state: AppState,
+  stackId: StackId,
+  taskId: TaskId | undefined
+): AppState {
+  const st = state.stacks.find((s) => s.id === stackId);
+  if (!st) return state;
+  const taskOk = taskId ? !!findTask(st.tasks, taskId) : false;
+  const nextTaskId = taskOk ? taskId! : firstTaskIdOf(st);
+  return {
+    ...state,
+    activeStackId: st.id,
+    selectedTaskId: nextTaskId,
+    editing: null,
+  };
 }
-
-// changeView is the single entry point for "I want to show this view".
-// It picks one of three paths depending on current state:
-//   - same view kind, or currently hidden → commit immediately.
-//   - visible, different kind             → hide first, park target in
-//                                            pendingOpen. The reconciler
-//                                            commits it after hide lands.
-// This is the only way the rest of the reducer mutates `view`.
-function changeView(state: AppState, view: View): AppState {
-  if (state.view.kind === view.kind) {
-    return { ...state, view, windowVisible: true, pendingOpen: null };
-  }
-  if (!state.windowVisible) {
-    return { ...state, view, windowVisible: true, pendingOpen: null };
-  }
-  return { ...state, windowVisible: false, pendingOpen: view };
-}
-
-const STACK_VIEW: View = { kind: "stack" };
 
 export function reducer(state: AppState, action: ReducerAction): AppState {
   switch (action.type) {
@@ -213,77 +220,28 @@ export function reducer(state: AppState, action: ReducerAction): AppState {
     case "stack-view-resized":
       return { ...state, stackViewSize: action.size };
 
-    case "window.show":
-      return changeView(state, STACK_VIEW);
-
-    case "window.hide":
-      if (!state.windowVisible && !state.pendingOpen) return state;
-      return onHide(state);
-
-    case "window.toggle":
-      // Each view-binding toggles its own view: pressing the stack-view
-      // shortcut while some other view (quick, settings) is on screen
-      // switches to stack rather than hiding — hide is reserved for the
-      // "already showing stack" case.
-      if (!state.windowVisible) return changeView(state, STACK_VIEW);
-      if (state.view.kind === "stack") return onHide(state);
-      return changeView(state, STACK_VIEW);
-
-    case "commit-pending-open":
-      // Fired by the reconciler after win.hide() actually lands. If the
-      // user re-opened (or hid again) in the meantime, their intent wins.
-      if (!state.pendingOpen) return state;
-      if (state.windowVisible) return { ...state, pendingOpen: null };
-      return {
-        ...state,
-        view: state.pendingOpen,
-        windowVisible: true,
-        pendingOpen: null,
-      };
-
-    case "view.open-stack":
-      return changeView(state, STACK_VIEW);
-
-    case "view.open-quick":
-      return changeView(state, { kind: "quick", draft: "" });
-
-    case "view.toggle-quick":
-      // Toggle acts on what's currently *visible*, not on the last view
-      // the reducer committed. The hidden state keeps its `view` intact
-      // (so we can resize/paint correctly on the next open), which means
-      // `view.kind === "quick" && !windowVisible` is a perfectly normal
-      // "closed after quick" state — pressing the binding there should
-      // open quick, not try to close an already-closed window.
-      // Pressing the quick-add shortcut while quick-add is visible
-      // dismisses regardless of pin — matches Escape semantics. Each
-      // keybind is a toggle of its own view, not a view switcher.
-      if (state.windowVisible && state.view.kind === "quick") {
-        return onHide(state);
+    // --- Window presentation -------------------------------------------------
+    case "present.toggle":
+      // Press a window's own keybind to close it; press it from anywhere
+      // else to open it (replacing whatever else is presented).
+      if (state.presented === action.window) {
+        return { ...state, presented: null };
       }
-      return changeView(state, { kind: "quick", draft: "" });
+      return { ...state, presented: action.window };
 
-    case "view.open-settings":
-      return changeView(state, {
-        kind: "settings",
-        tab: action.tab ?? "keybindings",
-      });
+    case "present.set":
+      return state.presented === action.window
+        ? state
+        : { ...state, presented: action.window };
 
-    case "view.quick-update-draft":
-      if (state.view.kind !== "quick") return state;
-      return { ...state, view: { ...state.view, draft: action.draft } };
-
-    case "view.settings-set-tab":
-      if (state.view.kind !== "settings") return state;
-      return { ...state, view: { ...state.view, tab: action.tab } };
-
-    case "quick-add.commit": {
-      if (state.view.kind !== "quick") return state;
-      const text = state.view.draft.trim();
+    // --- Window-emitted intents ---------------------------------------------
+    case "quick.commit-task": {
+      const text = action.text.trim();
       let next = state;
       if (text) {
-        // If the user hasn't created any stack yet, a quick-add shouldn't
-        // dead-end — spin up a default "Todo" stack and land the task there.
-        let targetId = next.activeStackId;
+        // If no stack exists yet, spin up a default "Todo" stack rather
+        // than dead-ending the quick-add.
+        let targetId = action.stackId ?? next.activeStackId;
         if (!targetId || !next.stacks.some((s) => s.id === targetId)) {
           const stack: Stack = {
             id: uid(),
@@ -316,17 +274,28 @@ export function reducer(state: AppState, action: ReducerAction): AppState {
           ),
         };
       }
-      // Hide unless pinned.
-      return next.pinned ? changeView(next, STACK_VIEW) : onHide(next);
+      // After a quick-add: if pinned, drop user back on the stack window so
+      // they can see what they just added; otherwise hide everything.
+      return { ...next, presented: next.pinned ? "main" : null };
     }
 
-    case "quick-add.cancel":
-      // Escape from quick-add dismisses the window regardless of pin —
-      // "cancel" means "go away", not "switch view".
-      return onHide(state);
+    case "settings.set-overrides":
+      return { ...state, overrides: action.overrides };
 
-    case "settings.exit":
-      return changeView(state, STACK_VIEW);
+    case "settings.set-tab":
+      return { ...state, settingsTab: action.tab };
+
+    case "bindings.hydrate":
+      return { ...state, overrides: action.overrides };
+
+    case "bindings.set-outcomes":
+      return { ...state, registrationOutcomes: action.outcomes };
+
+    case "search.go-to":
+      return {
+        ...selectStackAndTask(state, action.stackId, action.taskId),
+        presented: "main",
+      };
 
     case "toggle-pin":
       return { ...state, pinned: !state.pinned };
@@ -579,6 +548,19 @@ export function reducer(state: AppState, action: ReducerAction): AppState {
 
     case "new-task-cancel":
       return { ...state, editing: null };
+
+    // --- Portal menu (overlay) ---------------------------------------------
+    case "portal.open":
+      return {
+        ...state,
+        portal: { requestId: action.requestId, request: action.request },
+      };
+
+    case "portal.close":
+      // Stale-dismiss guard — a late dismiss event from a closed menu
+      // can't blow away a freshly-opened one.
+      if (state.portal?.requestId !== action.requestId) return state;
+      return { ...state, portal: null };
 
     case "select-task":
       return { ...state, selectedTaskId: action.taskId };
