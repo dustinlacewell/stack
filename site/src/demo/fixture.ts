@@ -80,12 +80,14 @@ export function fixtureState(): AppState {
     activeStackId: morningRoutine.id,
     selectedTaskId: morningRoutine.tasks[1].id, // Exercise
     stackViewSize: null,
-    view: { kind: "stack" },
-    pendingOpen: null,
     lastHabitResetDate: null,
+    pinned: false,
     editing: null,
     confirming: null,
-    windowVisible: true,
-    pinned: false,
+    settingsTab: "keybindings",
+    overrides: {},
+    registrationOutcomes: [],
+    presented: "main",
+    portal: null,
   };
 }

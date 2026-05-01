@@ -14,7 +14,6 @@ export function StackViewDemo() {
     <ShadowScope styles={appStyles} className="demo-stack-view">
       <div className="app-frame" style={{ height: "100%" }}>
         <Titlebar
-          view={{ kind: "stack" }}
           titleText="Stack"
           pinned={state.pinned}
           onOpenSettings={() => {}}

@@ -5,7 +5,7 @@
 import tokens from "@app/design/tokens.css?raw";
 import titlebar from "@app/app/Titlebar.css?raw";
 import stackViewCss from "@app/app/StackView.css?raw";
-import quickViewCss from "@app/app/QuickView.css?raw";
+import quickViewCss from "@app/windows/quick/host.css?raw";
 import stackListCss from "@app/components/StackList.css?raw";
 import taskTreeCss from "@app/components/TaskTree.css?raw";
 import editingInputCss from "@app/components/EditingInput.css?raw";
@@ -17,8 +17,10 @@ import dialogCss from "@app/design/primitives/Dialog.css?raw";
 import chipCss from "@app/design/primitives/Chip.css?raw";
 import stackSelectCss from "@app/components/StackSelect.css?raw";
 
-// Remap :root → :host so custom properties scope to the shadow root
+// Remap :root → :host so custom properties scope to the shadow root.
+// Same trick for any host-CSS that was authored against a top-level webview.
 const scopedTokens = tokens.replace(/:root/g, ":host");
+const scopedQuick = quickViewCss.replace(/:root/g, ":host");
 
 // Base styles that App.css normally sets on :root / body / .app.
 // We reproduce only what the embedded components need.
@@ -69,7 +71,7 @@ export const appStyles = [
   baseReset,
   titlebar,
   stackViewCss,
-  quickViewCss,
+  scopedQuick,
   stackListCss,
   taskTreeCss,
   editingInputCss,

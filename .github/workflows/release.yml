@@ -42,6 +42,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      # Belt-and-braces — `targets:` on the action above should install the
+      # cross-compile target, but on the macos-latest runner (host arm64)
+      # the x86_64 target isn't always provisioned. Ensure it explicitly.
+      - run: rustup target add ${{ matrix.target }}
+
       - name: Install Linux deps
         if: matrix.platform == 'ubuntu-22.04'
         run: |
