@@ -60,6 +60,7 @@ export function StackSelect({
         x: rect.left,
         y: rect.bottom,
         minWidth: rect.width,
+        selectedId: activeStackId ?? undefined,
       });
       if (id) onChange(id);
     } else {

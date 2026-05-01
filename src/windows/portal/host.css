@@ -36,7 +36,16 @@ html, body, #root {
   white-space: nowrap;
 }
 
-.portal-item:hover {
+/* The currently-selected item — what's active in the caller's state.
+   Stays marked regardless of where the keyboard cursor is, so the user
+   can see what they'd be replacing. */
+.portal-item.active {
+  color: var(--accent);
+}
+
+/* The keyboard cursor / hover row. Highlight is applied here (not
+   :hover) so mouse-and-keyboard nav share the exact same visual state. */
+.portal-item.focused {
   background: var(--surface-4);
 }
 
@@ -44,7 +53,7 @@ html, body, #root {
   color: var(--danger-text);
 }
 
-.portal-item.danger:hover {
+.portal-item.danger.focused {
   background: var(--danger-soft);
 }
 

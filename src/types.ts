@@ -64,6 +64,7 @@ export type PortalShowRequest = {
   screenX: number;
   screenY: number;
   minWidth?: number;
+  selectedId?: string;
 };
 
 // Output of the Rust shortcut registrar: which combos succeeded and which

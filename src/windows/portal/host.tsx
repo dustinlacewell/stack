@@ -21,6 +21,9 @@ import "./host.css";
 function PortalHost() {
   const [request, setRequest] = useState<ShowMenuRequest | null>(null);
   const requestIdRef = useRef<string | null>(null);
+  // Index into `request.items` of the currently focused row. Hover and
+  // arrow keys move it; Enter selects it; Escape dismisses.
+  const [cursor, setCursor] = useState(0);
 
   // Listen for show requests from the main window.
   useEffect(() => {
@@ -28,6 +31,10 @@ function PortalHost() {
       const { requestId, ...rest } = event.payload;
       requestIdRef.current = requestId;
       setRequest(rest);
+      // Seed the cursor from the caller's selectedId, falling back to
+      // the first non-separator non-disabled item.
+      const idx = firstFocusableIndex(rest.items, rest.selectedId);
+      setCursor(idx);
     });
     return () => {
       unlisten.then((u) => u());
@@ -79,16 +86,19 @@ function PortalHost() {
       if (x < PAD) x = PAD;
       if (y < PAD) y = PAD;
 
-      // 5. Add margin for box-shadow overflow, then position and reveal.
-      //    The extra space is transparent + click-through (see below).
+      // 5. Add margin for the box-shadow overflow, then position and reveal.
+      //    The extra space is transparent. We *don't* set ignore-cursor —
+      //    when the menu opens under a stationary cursor (the user just
+      //    clicked the trigger at this screen point), no `mouseenter`
+      //    fires to re-enable input, so hover/click on items would silently
+      //    drop the first interaction. Accept clicks on the transparent
+      //    margin instead; it's a 16px ring, and clicks there blur the
+      //    portal anyway, which dismisses correctly.
       const SHADOW = 16;
       const finalW = docW + SHADOW * 2;
       const finalH = docH + SHADOW * 2;
       await win.setSize(new LogicalSize(finalW, finalH));
       await win.setPosition(new LogicalPosition(x - SHADOW, y - SHADOW));
-      // Make the transparent padding click-through. The menu div
-      // re-enables cursor events on mouseenter (see render below).
-      await win.setIgnoreCursorEvents(true);
       await win.show();
       await win.setFocus();
     })();
@@ -128,24 +138,54 @@ function PortalHost() {
     };
   }, [request]);
 
-  // Escape → dismiss.
+  // Keyboard navigation.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") finish({ kind: "dismiss" });
+      if (!request) return;
+      switch (e.key) {
+        case "Escape":
+          e.preventDefault();
+          finish({ kind: "dismiss" });
+          return;
+        case "ArrowDown":
+          e.preventDefault();
+          setCursor((c) => stepCursor(request.items, c, 1));
+          return;
+        case "ArrowUp":
+          e.preventDefault();
+          setCursor((c) => stepCursor(request.items, c, -1));
+          return;
+        case "Home":
+          e.preventDefault();
+          setCursor(firstFocusableIndex(request.items));
+          return;
+        case "End":
+          e.preventDefault();
+          setCursor(lastFocusableIndex(request.items));
+          return;
+        case "Enter": {
+          e.preventDefault();
+          const item = request.items[cursor];
+          if (item && !("separator" in item) && !item.disabled) {
+            finish({ kind: "select", id: item.id });
+          }
+          return;
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [request, cursor]);
 
   if (!request) return null;
+
+  const selectedId = request.selectedId;
 
   return (
     <div
       className="portal-menu"
       style={{ minWidth: request.minWidth ?? 160, margin: 16 }}
       role="menu"
-      onMouseEnter={() => getCurrentWindow().setIgnoreCursorEvents(false)}
-      onMouseLeave={() => getCurrentWindow().setIgnoreCursorEvents(true)}
     >
       {request.items.map((item, i) => {
         if ("separator" in item && item.separator) {
@@ -155,12 +195,22 @@ function PortalHost() {
         const classes = ["portal-item"];
         if (it.danger) classes.push("danger");
         if (it.disabled) classes.push("disabled");
+        if (i === cursor) classes.push("focused");
+        if (selectedId !== undefined && it.id === selectedId) {
+          classes.push("active");
+        }
         return (
           <button
             key={it.id}
             className={classes.join(" ")}
             role="menuitem"
+            aria-current={
+              selectedId !== undefined && it.id === selectedId
+                ? "true"
+                : undefined
+            }
             disabled={it.disabled}
+            onMouseEnter={() => !it.disabled && setCursor(i)}
             onClick={() => !it.disabled && finish({ kind: "select", id: it.id })}
           >
             {it.label}
@@ -169,6 +219,40 @@ function PortalHost() {
       })}
     </div>
   );
+}
+
+// --- Cursor helpers ------------------------------------------------------
+
+function isFocusable(item: PortalItem): item is Extract<PortalItem, { id: string }> {
+  return !("separator" in item) && !item.disabled;
+}
+
+function firstFocusableIndex(items: PortalItem[], preferId?: string): number {
+  if (preferId !== undefined) {
+    const idx = items.findIndex(
+      (it) => isFocusable(it) && it.id === preferId
+    );
+    if (idx >= 0) return idx;
+  }
+  const idx = items.findIndex(isFocusable);
+  return idx < 0 ? 0 : idx;
+}
+
+function lastFocusableIndex(items: PortalItem[]): number {
+  for (let i = items.length - 1; i >= 0; i--) {
+    if (isFocusable(items[i])) return i;
+  }
+  return 0;
+}
+
+function stepCursor(items: PortalItem[], from: number, dir: 1 | -1): number {
+  if (items.length === 0) return 0;
+  let i = from;
+  for (let n = 0; n < items.length; n++) {
+    i = (i + dir + items.length) % items.length;
+    if (isFocusable(items[i])) return i;
+  }
+  return from;
 }
 
 // Emit only — visibility and main-window focus are owned by the main-side

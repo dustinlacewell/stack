@@ -147,7 +147,9 @@ function useAuxWindows(opts: {
     return () => {
       cancelled = true;
     };
-  }, [opts.dispatch]);
+    // WINDOWS in deps so HMR-replaced specs trigger a fresh manager and
+    // a fresh reconcile pass — picks up size/option edits without restart.
+  }, [opts.dispatch, WINDOWS]);
 
   useEffect(() => {
     manager?.reconcile(opts.state).catch(() => {});

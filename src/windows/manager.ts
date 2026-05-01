@@ -116,7 +116,25 @@ export async function createWindowManager<State>(
           await emitTo(rt.spec.label, `${rt.spec.label}:show`, desired.payload);
           rt.lastPayloadKey = key;
         }
+        // For fixed-size palettes, re-pin to the spec's dimensions every
+        // reconcile pass. The constructor takes these same numbers, but
+        // Tauri can apply them as physical pixels under DPI scaling and
+        // we want logical. Re-asserting on every pass also makes Vite HMR
+        // pick up height/width edits in the spec without restarting tauri.
+        const resizable = rt.spec.options.resizable !== false;
+        const w = rt.spec.options.width as number | undefined;
+        const h = rt.spec.options.height as number | undefined;
+        if (!resizable && typeof w === "number" && typeof h === "number") {
+          const { LogicalSize } = await import("@tauri-apps/api/dpi");
+          const size = new LogicalSize(w, h);
+          await win.setMinSize(null);
+          await win.setMaxSize(null);
+          await win.setSize(size);
+          await win.setMinSize(size);
+          await win.setMaxSize(size);
+        }
         if (!rt.lastVisible && !rt.spec.selfShows) {
+          if (!resizable) await win.center();
           await win.show();
           await win.setFocus();
         }

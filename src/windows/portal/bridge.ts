@@ -11,7 +11,11 @@
  * is indistinguishable from a dismiss to the caller.
  */
 
-import type { PortalItem, PortalResponseEnvelope } from "./types";
+import type {
+  PortalItem,
+  PortalResponseEnvelope,
+  PortalRpcRequest,
+} from "./types";
 import type { PortalAPI } from "./context";
 import type { ReducerAction } from "../../reducer";
 
@@ -34,7 +38,7 @@ export async function initPortalBridge(opts: InitOptions): Promise<PortalAPI> {
     initialized = true;
 
     const { getCurrentWindow } = await import("@tauri-apps/api/window");
-    const { listen } = await import("@tauri-apps/api/event");
+    const { listen, emitTo } = await import("@tauri-apps/api/event");
 
     const mainWin = getCurrentWindow();
     getMainWinPos = async () => {
@@ -43,12 +47,36 @@ export async function initPortalBridge(opts: InitOptions): Promise<PortalAPI> {
       return { x: pos.x, y: pos.y, scale };
     };
 
+    // Resolve local showMenu() promises. The portal host emits
+    // "portal:response" globally; we filter by requestId to match.
     await listen<PortalResponseEnvelope>("portal:response", (event) => {
       const { requestId } = event.payload;
       const resolver = pending.get(requestId);
       if (!resolver) return;
       pending.delete(requestId);
       resolver(event.payload.kind === "select" ? event.payload.id : null);
+    });
+
+    // Cross-window RPC relay. Child windows emit "portal:request" with
+    // pre-translated screen coords + items + the originating window's
+    // label. We open the portal on their behalf, await the result, and
+    // emit it back as "portal:response" addressed to that window.
+    await listen<PortalRpcRequest>("portal:request", (event) => {
+      const { requestId, from, items, screenX, screenY, minWidth, selectedId } =
+        event.payload;
+      const id = bridgeRequestId();
+      pending.set(id, (chosen) => {
+        const response: PortalResponseEnvelope =
+          chosen !== null
+            ? { kind: "select", id: chosen, requestId }
+            : { kind: "dismiss", requestId };
+        void emitTo(from, "portal:response", response);
+      });
+      opts.dispatch({
+        type: "portal.open",
+        request: { items, screenX, screenY, minWidth, selectedId },
+        requestId: id,
+      });
     });
   }
 
@@ -60,6 +88,7 @@ async function showMenu(opts: {
   x: number;
   y: number;
   minWidth?: number;
+  selectedId?: string;
 }): Promise<string | null> {
   if (!dispatchHandle || !getMainWinPos) {
     throw new Error("Portal bridge not initialized");
@@ -72,6 +101,7 @@ async function showMenu(opts: {
     screenX: winX + opts.x * scale,
     screenY: winY + opts.y * scale,
     minWidth: opts.minWidth,
+    selectedId: opts.selectedId,
   };
 
   return new Promise<string | null>((resolve) => {

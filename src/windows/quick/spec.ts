@@ -12,7 +12,7 @@ export const quickSpec: WindowSpec<AppState, ShowQuickRequest, QuickResponse> = 
     alwaysOnTop: true,
     skipTaskbar: true,
     width: 620,
-    height: 148,
+    height: 80,
     resizable: false,
     shadow: true,
     focus: false,

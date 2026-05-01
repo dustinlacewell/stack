@@ -7,6 +7,8 @@ export type PortalAPI = {
     x: number;
     y: number;
     minWidth?: number;
+    /** Marks this item as currently active and seeds the keyboard cursor. */
+    selectedId?: string;
   }) => Promise<string | null>;
 };
 
